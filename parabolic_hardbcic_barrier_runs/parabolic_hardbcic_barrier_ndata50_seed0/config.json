@@ -1,0 +1,17 @@
+{
+  "seed": 0,
+  "width": 64,
+  "depth": 4,
+  "activation": "tanh",
+  "epochs": 5000,
+  "lr": 0.001,
+  "n_res": 4096,
+  "n_qual": 4096,
+  "n_data": 50,
+  "lambda_res": 1.0,
+  "lambda_qual": 0.1,
+  "lambda_data": 1.0,
+  "eval_every": 100,
+  "heldout_residual_n": 4096,
+  "outdir": "parabolic_hardbcic_barrier_runs"
+}

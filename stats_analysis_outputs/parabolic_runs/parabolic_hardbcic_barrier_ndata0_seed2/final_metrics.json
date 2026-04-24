@@ -1,0 +1,17 @@
+{
+  "rel_l2_test": 0.00021113462737147248,
+  "heldout_residual_mse": 9.400095223099925e-06,
+  "ic_max_abs": 2.2611672398364924e-07,
+  "bc_max_abs": 8.742277657347586e-08,
+  "final_time_rel_l2": 0.00039443962308412586,
+  "min_pred": -8.742277657347586e-08,
+  "max_pred": 1.0,
+  "frac_negative": 0.004149377593360996,
+  "neg_part_l2": 5.6313962382148475e-09,
+  "max_lower_violation": 2.2611672398364924e-07,
+  "max_upper_violation": 1.1585084502829801e-07,
+  "mean_barrier_violation": 5.852965029410575e-10,
+  "min_over_x_vs_t_min": -8.742277657347586e-08,
+  "train_seconds": 344.2382462024689,
+  "epochs": 5000
+}

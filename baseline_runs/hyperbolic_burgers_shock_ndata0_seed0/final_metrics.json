@@ -1,0 +1,10 @@
+{
+  "rel_l2_test": 0.17672459439930174,
+  "heldout_residual_mse": 0.10438568145036697,
+  "rel_l1": 0.12149175775037882,
+  "shock_location_error": 0.014999999999999902,
+  "transition_width": 0.05500000000000005,
+  "overshoot_undershoot_mean": 0.009873074479401112,
+  "train_seconds": 98.79275274276733,
+  "epochs": 6000
+}

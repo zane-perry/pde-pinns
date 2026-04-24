@@ -1,0 +1,13 @@
+{
+  "rel_l2_test": 0.0008978585722297956,
+  "heldout_residual_mse": 0.00317846960388124,
+  "boundary_rel_l2": 1.2349701330550316e-07,
+  "h1_semi_rel": 0.0017010878450241654,
+  "min_pred": 0.0,
+  "max_pred": 1.1447454690933228,
+  "max_lower_violation": 0.0,
+  "max_upper_violation": 0.0,
+  "mean_barrier_violation": 0.0,
+  "train_seconds": 65.83662796020508,
+  "epochs": 4000
+}

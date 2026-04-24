@@ -1,0 +1,9 @@
+{
+  "rel_l2_test": 0.011267535769395612,
+  "heldout_residual_mse": 0.0001525345869595185,
+  "initial_rel_l2": 0.008486296021494064,
+  "final_time_rel_l2": 0.030835033551116678,
+  "max_time_slice_rel_l2": 0.030835033551116678,
+  "train_seconds": 210.7497911453247,
+  "epochs": 5000
+}
