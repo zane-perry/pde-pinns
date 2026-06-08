@@ -412,14 +412,15 @@ def save_combined_metric_plots(all_dfs: Dict[str, pd.DataFrame], outdir: Path) -
             continue
 
         fig, ax = plt.subplots(figsize=(7, 4))
-        ax.boxplot(plot_data, labels=labels)
+        ax.boxplot(plot_data, tick_labels=labels)
         for i, vals in enumerate(plot_data, start=1):
             jitter = i + 0.05 * np.random.default_rng(i).normal(size=len(vals))
             ax.scatter(jitter, vals, alpha=0.7, s=20)
         ax.set_title(f"Cross-PDE comparison: {metric}")
         ax.set_ylabel(metric)
-        positive_vals = np.concatenate([v for v in plot_data if np.all(v > 0)])
-        if len(positive_vals) > 0:
+        positive_groups = [v for v in plot_data if np.all(v > 0)]
+        if len(positive_groups) > 0:
+            positive_vals = np.concatenate(positive_groups)
             spread = np.max(positive_vals) / max(np.min(positive_vals), 1e-16)
             if spread > 50:
                 ax.set_yscale("log")

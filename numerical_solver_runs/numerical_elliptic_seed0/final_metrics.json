@@ -1,0 +1,13 @@
+{
+  "rel_l2_test": 5.4363480207344986e-05,
+  "heldout_residual_mse": 3.701183282370382e-23,
+  "boundary_l2_abs": 0.0,
+  "boundary_max_abs": 0.0,
+  "h1_semi_rel": 5.43634802077533e-05,
+  "min_pred": 0.0,
+  "max_pred": 1.0000543634802088,
+  "frac_negative": 0.0,
+  "neg_part_l2": 0.0,
+  "max_negativity_violation": 0.0,
+  "solve_seconds": 29.8569438457489
+}

@@ -4,6 +4,6 @@
   "initial_rel_l2": 0.0098210553167487,
   "final_time_rel_l2": 0.0417874161436109,
   "max_time_slice_rel_l2": 0.0417874161436109,
-  "train_seconds": 217.80309510231018,
+  "train_seconds": 487.09304094314575,
   "epochs": 5000
 }

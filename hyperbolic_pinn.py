@@ -98,7 +98,7 @@ class MLP(nn.Module):
 # ============================================================
 
 class HyperbolicProblem:
-    name = "hyperbolic_entropy_pinn"
+    name = "hyperbolic"
     input_dim = 2
     has_initial = True
 
@@ -222,21 +222,15 @@ class HyperbolicProblem:
         U_pred = pred.reshape(len(ts), len(xs))
         U_true = truth.reshape(len(ts), len(xs))
         U_err = U_pred - U_true
-        U_abs = np.abs(U_err)
 
-        fig, axes = plt.subplots(1, 4, figsize=(20, 4))
-        for ax, Z, title in zip(
-            axes,
-            [U_true, U_pred, U_err, U_abs],
-            ["Exact", "Prediction", "Signed error", "Absolute error"],
-        ):
-            im = ax.contourf(X, Tm, Z, levels=40)
-            ax.set_title(title)
-            ax.set_xlabel("x")
-            ax.set_ylabel("t")
-            fig.colorbar(im, ax=ax)
+        fig, ax = plt.subplots(figsize=(6, 5))
+        im = ax.contourf(X, Tm, U_err, levels=40, cmap="jet")
+        ax.set_title("Informed Hyperbolic Error")
+        ax.set_xlabel("x")
+        ax.set_ylabel("t")
+        fig.colorbar(im, ax=ax)
         fig.tight_layout()
-        fig.savefig(os.path.join(outdir, f"{tag}_field_comparison.png"), dpi=160)
+        fig.savefig(os.path.join(outdir, f"{tag}_error.png"), dpi=160)
         plt.close(fig)
 
         # Selected time slices
@@ -264,7 +258,7 @@ class HyperbolicProblem:
         pos_entropy_violation = np.maximum(ent_expr, 0.0)
 
         fig, ax = plt.subplots(figsize=(7, 4))
-        im = ax.contourf(X, Tm, pos_entropy_violation, levels=40)
+        im = ax.contourf(X, Tm, pos_entropy_violation, levels=40, cmap="jet")
         ax.set_title("Positive entropy violation")
         ax.set_xlabel("x")
         ax.set_ylabel("t")
@@ -300,14 +294,14 @@ class TrainConfig:
     eval_every: int = 100
     heldout_residual_n: int = 4096
     heldout_entropy_n: int = 4096
-    outdir: str = "hyperbolic_entropy_runs"
+    outdir: str = "hyperbolic_runs"
 
 
 # ============================================================
 # Trainer
 # ============================================================
 
-class HyperbolicEntropyTrainer:
+class HyperbolicTrainer:
     def __init__(self, problem: HyperbolicProblem, config: TrainConfig):
         self.problem = problem
         self.config = config
@@ -566,7 +560,7 @@ class HyperbolicEntropyTrainer:
 # Convenience runner
 # ============================================================
 
-def default_config(seed: int = 0, n_data: int = 0, outdir: str = "hyperbolic_entropy_runs") -> TrainConfig:
+def default_config(seed: int = 0, n_data: int = 0, outdir: str = "hyperbolic_runs") -> TrainConfig:
     return TrainConfig(
         seed=seed,
         width=64,
@@ -589,10 +583,10 @@ def default_config(seed: int = 0, n_data: int = 0, outdir: str = "hyperbolic_ent
     )
 
 
-def run_single(seed: int = 0, n_data: int = 0, outdir: str = "hyperbolic_entropy_runs") -> Dict[str, float]:
+def run_single(seed: int = 0, n_data: int = 0, outdir: str = "hyperbolic_runs") -> Dict[str, float]:
     problem = HyperbolicProblem()
     cfg = default_config(seed=seed, n_data=n_data, outdir=outdir)
-    trainer = HyperbolicEntropyTrainer(problem, cfg)
+    trainer = HyperbolicTrainer(problem, cfg)
     final_metrics = trainer.train()
 
     print("\nFinal metrics:")
@@ -607,6 +601,6 @@ def run_single(seed: int = 0, n_data: int = 0, outdir: str = "hyperbolic_entropy
 
 if __name__ == "__main__":
     SEED = 0
-    N_DATA = 100   # set to 0 for pure physics-informed; try 50 or 100 for sparse hybrid runs
-    OUTDIR = "hyperbolic_entropy_runs"
+    N_DATA = 0   # set to 0 for pure physics-informed; try 50 or 100 for sparse hybrid runs
+    OUTDIR = "hyperbolic_runs"
     run_single(seed=SEED, n_data=N_DATA, outdir=OUTDIR)

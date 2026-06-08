@@ -1,0 +1,19 @@
+{
+  "rel_l2_test": 0.18347155867722803,
+  "heldout_residual_mse": 0.2193491905927658,
+  "heldout_entropy_violation": 0.041671041399240494,
+  "rel_l1_test": 0.17949309333248212,
+  "final_time_rel_l1": 0.13130587693782295,
+  "final_time_rel_l2": 0.14098602356244452,
+  "ic_max_abs": 0.9245131015777588,
+  "shock_location_error_final": 0.0024999999999999467,
+  "shock_width_final": 2.1525,
+  "overshoot": 0.0,
+  "undershoot": 0.006488174200057983,
+  "mean_entropy_violation_eval": 0.0717896819114685,
+  "max_entropy_violation_eval": 8.373281478881836,
+  "min_pred": -0.006488174200057983,
+  "max_pred": 1.9456855058670044,
+  "train_seconds": 357.0263841152191,
+  "epochs": 6000
+}

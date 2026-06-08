@@ -1,0 +1,15 @@
+{
+  "seed": 0,
+  "width": 64,
+  "depth": 4,
+  "activation": "tanh",
+  "epochs": 4000,
+  "lr": 0.001,
+  "n_energy": 4096,
+  "n_data": 0,
+  "lambda_energy": 1.0,
+  "lambda_data": 1.0,
+  "eval_every": 100,
+  "heldout_residual_n": 4096,
+  "outdir": "elliptic_runs"
+}

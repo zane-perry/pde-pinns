@@ -1,0 +1,12 @@
+{
+  "rel_l2_test": 0.005046074747423328,
+  "heldout_residual_mse": 0.0009910061356303026,
+  "ic_max_abs": 0.0,
+  "bc_max_abs": 1.2144838137404922e-16,
+  "initial_rel_l2": 0.0,
+  "final_time_rel_l2": 0.005690263725175161,
+  "max_time_slice_rel_l2": 0.005719400475988217,
+  "min_pred": 0.0,
+  "max_pred": 1.0,
+  "solve_seconds": 0.36150407791137695
+}

@@ -1,0 +1,20 @@
+{
+  "rel_l2_test": 0.02060882183335033,
+  "heldout_residual_mse": 0.43180686235427856,
+  "boundary_l2_abs": 0.0,
+  "boundary_max_abs": 0.0,
+  "h1_semi_rel": 0.02778312653045112,
+  "min_pred": 0.0,
+  "max_pred": 1.0084137916564941,
+  "frac_negative": 0.0,
+  "max_negativity_violation": 0.0,
+  "mean_negativity_violation": 0.0,
+  "symmetry_l2": 5.6668962855610516e-08,
+  "symmetry_max_abs": 3.5762786865234375e-07,
+  "swap_xy_symmetry_max_abs": 2.384185791015625e-07,
+  "reflect_x_symmetry_max_abs": 3.5762786865234375e-07,
+  "reflect_y_symmetry_max_abs": 2.384185791015625e-07,
+  "rotate_180_symmetry_max_abs": 3.5762786865234375e-07,
+  "train_seconds": 649.7067008018494,
+  "epochs": 4000
+}

@@ -1,8 +1,14 @@
 {
-  "rel_l2_test": 0.07209609593767873,
-  "heldout_residual_mse": 0.002461007796227932,
-  "boundary_rel_l2": 0.2256775487388408,
-  "h1_semi_rel": 0.16729650340985067,
-  "train_seconds": 274.5471680164337,
+  "rel_l2_test": 0.05144601067673371,
+  "heldout_residual_mse": 0.0018360925605520606,
+  "boundary_l2_abs": 0.04465090483427048,
+  "boundary_max_abs": 0.10351584106683731,
+  "h1_semi_rel": 0.08860399817949026,
+  "min_pred": -0.10351584106683731,
+  "max_pred": 1.0202784538269043,
+  "frac_negative": 0.054436172392596134,
+  "neg_part_l2": 0.01018461212515831,
+  "max_negativity_violation": 0.10351584106683731,
+  "train_seconds": 528.3770570755005,
   "epochs": 4000
 }

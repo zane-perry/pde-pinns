@@ -1,0 +1,15 @@
+{
+  "rel_l2_test": 0.03240570851894699,
+  "rel_l1_test": 0.002986557410951735,
+  "final_time_rel_l1": 0.002379520727703664,
+  "final_time_rel_l2": 0.029069469726241876,
+  "shock_location_error_final": 0.0018703241895261513,
+  "shock_width_final": 0.009975062344139696,
+  "overshoot": 0.0,
+  "undershoot": 0.0,
+  "mean_entropy_violation_eval": 0.06858847773149439,
+  "max_entropy_violation_eval": 57.20250108540515,
+  "min_pred": 0.0,
+  "max_pred": 2.0,
+  "solve_seconds": 0.09005427360534668
+}

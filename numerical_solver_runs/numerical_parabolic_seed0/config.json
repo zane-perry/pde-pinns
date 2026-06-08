@@ -1,0 +1,11 @@
+{
+  "seed": 0,
+  "elliptic_nx": 121,
+  "elliptic_ny": 121,
+  "parabolic_nx": 161,
+  "parabolic_nt": 121,
+  "hyperbolic_nx": 401,
+  "hyperbolic_nt": 121,
+  "hyperbolic_cfl": 0.45,
+  "outdir": "numerical_solver_runs"
+}

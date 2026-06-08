@@ -1,4 +1,3 @@
-
 import os
 import json
 import time
@@ -51,12 +50,12 @@ def gradient(y: torch.Tensor, x: torch.Tensor) -> torch.Tensor:
 def second_derivative(y: torch.Tensor, x: torch.Tensor, dim: int) -> torch.Tensor:
     grad_y = gradient(y, x)
     return torch.autograd.grad(
-        grad_y[:, dim:dim+1],
+        grad_y[:, dim:dim + 1],
         x,
-        grad_outputs=torch.ones_like(grad_y[:, dim:dim+1]),
+        grad_outputs=torch.ones_like(grad_y[:, dim:dim + 1]),
         create_graph=True,
         retain_graph=True,
-    )[0][:, dim:dim+1]
+    )[0][:, dim:dim + 1]
 
 
 def relative_l2_error(pred: np.ndarray, truth: np.ndarray) -> float:
@@ -69,8 +68,15 @@ def relative_l2_error(pred: np.ndarray, truth: np.ndarray) -> float:
 # Network backbone
 # ============================================================
 
-class MLP(nn.Module):
-    def __init__(self, in_dim: int, out_dim: int, width: int = 64, depth: int = 4, activation: str = "tanh"):
+class MLPBackbone(nn.Module):
+    def __init__(
+        self,
+        in_dim: int,
+        out_dim: int,
+        width: int = 64,
+        depth: int = 4,
+        activation: str = "tanh",
+    ):
         super().__init__()
         if activation == "tanh":
             act = nn.Tanh
@@ -101,7 +107,7 @@ class MLP(nn.Module):
 # ============================================================
 
 class ParabolicProblem:
-    name = "parabolic_hardbcic_barrier"
+    name = "parabolic"
     input_dim = 2
     has_boundary = True
     has_initial = True
@@ -207,35 +213,36 @@ class ParabolicProblem:
             "min_pred": float(np.min(U_pred)),
             "max_pred": float(np.max(U_pred)),
             "frac_negative": frac_negative,
-            "neg_part_l2": float(np.sqrt(np.mean(negative_part**2))),
+            "neg_part_l2": float(np.sqrt(np.mean(negative_part ** 2))),
             "max_lower_violation": float(np.max(lower_violation)),
             "max_upper_violation": float(np.max(upper_violation)),
             "mean_barrier_violation": float(np.mean(lower_violation + upper_violation)),
             "min_over_x_vs_t_min": float(np.min(min_over_x_vs_t)),
         }
 
-    def plot_prediction(self, pred: np.ndarray, truth: np.ndarray, grid_meta: Dict[str, np.ndarray], outdir: str, tag: str) -> None:
+    def plot_prediction(
+        self,
+        pred: np.ndarray,
+        truth: np.ndarray,
+        grid_meta: Dict[str, np.ndarray],
+        outdir: str,
+        tag: str,
+    ) -> None:
         xs = grid_meta["x"]
         ts = grid_meta["t"]
         X, Tm = grid_meta["X"], grid_meta["T"]
         U_pred = pred.reshape(len(ts), len(xs))
         U_true = truth.reshape(len(ts), len(xs))
         U_err = U_pred - U_true
-        U_abs = np.abs(U_err)
 
-        fig, axes = plt.subplots(1, 4, figsize=(20, 4))
-        for ax, Z, title in zip(
-            axes,
-            [U_true, U_pred, U_err, U_abs],
-            ["Exact", "Prediction", "Signed error", "Absolute error"],
-        ):
-            im = ax.contourf(X, Tm, Z, levels=40)
-            ax.set_title(title)
-            ax.set_xlabel("x")
-            ax.set_ylabel("t")
-            fig.colorbar(im, ax=ax)
+        fig, ax = plt.subplots(figsize=(6, 5))
+        im = ax.contourf(X, Tm, U_err, levels=40, cmap="jet")
+        ax.set_title("Informed Parabolic Error")
+        ax.set_xlabel("x")
+        ax.set_ylabel("t")
+        fig.colorbar(im, ax=ax)
         fig.tight_layout()
-        fig.savefig(os.path.join(outdir, f"{tag}_field_comparison.png"), dpi=160)
+        fig.savefig(os.path.join(outdir, f"{tag}_error.png"), dpi=160)
         plt.close(fig)
 
         # Time slices
@@ -258,7 +265,6 @@ class ParabolicProblem:
         lower = self.lower_barrier_numpy(Z).reshape(len(ts), len(xs))
         upper = self.upper_barrier_numpy(Z).reshape(len(ts), len(xs))
         lower_min_over_x = np.min(lower, axis=1)
-        upper_min_over_x = np.min(upper, axis=1)
         upper_max_over_x = np.max(upper, axis=1)
 
         fig, ax = plt.subplots(figsize=(7, 4))
@@ -276,7 +282,7 @@ class ParabolicProblem:
         # Negative part heatmap
         fig, ax = plt.subplots(figsize=(7, 4))
         neg = np.maximum(-U_pred, 0.0)
-        im = ax.contourf(X, Tm, neg, levels=40)
+        im = ax.contourf(X, Tm, neg, levels=40, cmap="jet")
         ax.set_title("Negative part of prediction")
         ax.set_xlabel("x")
         ax.set_ylabel("t")
@@ -287,21 +293,42 @@ class ParabolicProblem:
 
 
 # ============================================================
-# Hard IC/BC admissible ansatz
-# u_theta(x,t) = sin(pi x) + t x(1-x) N_theta(x,t)
+# Hard IC/BC + hard comparison-barrier admissible ansatz
+#
+# lower(x,t) = exp(-t) sin(pi x)
+# upper(x,t) = exp(-t) sin(pi x) + 2 t x(1-x)
+#
+# u_theta(x,t) = lower(x,t) + (upper(x,t) - lower(x,t)) sigmoid(N_theta(x,t))
+#
+# Since 0 < sigmoid(N) < 1:
+# lower <= u_theta <= upper everywhere.
+#
+# Also upper - lower = 2 t x(1-x), so the learnable correction
+# vanishes at t = 0, x = 0, and x = 1. Therefore the IC/BC are
+# hard-enforced simultaneously with the barrier bounds.
 # ============================================================
 
-class HardBCICParabolicModel(nn.Module):
+class ParabolicModel(nn.Module):
     def __init__(self, backbone: nn.Module, problem: ParabolicProblem):
         super().__init__()
         self.backbone = backbone
         self.problem = problem
 
-    def forward(self, z_physical: torch.Tensor) -> torch.Tensor:
+    def lower_barrier(self, z_physical: torch.Tensor) -> torch.Tensor:
         x = z_physical[:, 0:1]
         t = z_physical[:, 1:2]
+        return torch.exp(-t) * torch.sin(torch.pi * x)
+
+    def upper_barrier(self, z_physical: torch.Tensor) -> torch.Tensor:
+        x = z_physical[:, 0:1]
+        t = z_physical[:, 1:2]
+        return torch.exp(-t) * torch.sin(torch.pi * x) + 2.0 * t * x * (1.0 - x)
+
+    def forward(self, z_physical: torch.Tensor) -> torch.Tensor:
         raw = self.backbone(self.problem.normalize_inputs(z_physical))
-        return torch.sin(torch.pi * x) + t * x * (1.0 - x) * raw
+        lower = self.lower_barrier(z_physical)
+        upper = self.upper_barrier(z_physical)
+        return lower + (upper - lower) * torch.sigmoid(raw)
 
 
 # ============================================================
@@ -318,45 +345,46 @@ class TrainConfig:
     lr: float = 1e-3
 
     n_res: int = 4096
-    n_qual: int = 4096
     n_data: int = 0
 
     lambda_res: float = 1.0
-    lambda_qual: float = 0.1
     lambda_data: float = 1.0
 
     eval_every: int = 100
     heldout_residual_n: int = 4096
-    outdir: str = "parabolic_hardbcic_barrier_runs"
+    outdir: str = "parabolic_hardbcic_hardbarrier_runs"
 
 
 # ============================================================
 # Trainer
 # ============================================================
 
-class ParabolicHardBCICBarrierTrainer:
+class ParabolicTrainer:
     def __init__(self, problem: ParabolicProblem, config: TrainConfig):
         self.problem = problem
         self.config = config
-        self.run_dir = os.path.join(config.outdir, f"{problem.name}_ndata{config.n_data}_seed{config.seed}")
+        self.run_dir = os.path.join(
+            config.outdir,
+            f"{problem.name}_ndata{config.n_data}_seed{config.seed}",
+        )
         ensure_dir(self.run_dir)
 
         set_seed(config.seed)
-        backbone = MLP(
+        backbone = MLPBackbone(
             in_dim=problem.input_dim,
             out_dim=1,
             width=config.width,
             depth=config.depth,
             activation=config.activation,
         ).to(DEVICE)
-        self.model = HardBCICParabolicModel(backbone, problem).to(DEVICE)
+
+        self.model = ParabolicModel(backbone, problem).to(DEVICE)
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=config.lr)
 
         self.history: Dict[str, List[float]] = {
             "epoch": [],
             "total_loss": [],
             "loss_res": [],
-            "loss_qual": [],
             "loss_data": [],
             "heldout_residual_mse": [],
             "rel_l2_test": [],
@@ -384,24 +412,13 @@ class ParabolicHardBCICBarrierTrainer:
         f = to_tensor(self.problem.forcing(z.detach().cpu().numpy()))
         return ut - self.problem.kappa * uxx + self.problem.beta * ux - f
 
-    def qualitative_loss(self, z: torch.Tensor) -> torch.Tensor:
-        u = self.model(z)
-        lower = to_tensor(self.problem.lower_barrier_numpy(z.detach().cpu().numpy()))
-        upper = to_tensor(self.problem.upper_barrier_numpy(z.detach().cpu().numpy()))
-        lower_violation = torch.relu(lower - u)
-        upper_violation = torch.relu(u - upper)
-        return torch.mean(lower_violation**2 + upper_violation**2)
-
     def _loss_terms(self) -> Dict[str, torch.Tensor]:
         cfg = self.config
         terms: Dict[str, torch.Tensor] = {}
 
         z_res = to_tensor(self.problem.sample_interior(cfg.n_res), requires_grad=True)
         res = self.residual(z_res)
-        terms["loss_res"] = torch.mean(res**2)
-
-        z_qual = to_tensor(self.problem.sample_interior(cfg.n_qual))
-        terms["loss_qual"] = self.qualitative_loss(z_qual)
+        terms["loss_res"] = torch.mean(res ** 2)
 
         if cfg.n_data > 0:
             z_data_np = self.problem.sample_observations(cfg.n_data)
@@ -414,7 +431,6 @@ class ParabolicHardBCICBarrierTrainer:
 
         terms["total_loss"] = (
             cfg.lambda_res * terms["loss_res"]
-            + cfg.lambda_qual * terms["loss_qual"]
             + cfg.lambda_data * terms["loss_data"]
         )
         return terms
@@ -424,7 +440,7 @@ class ParabolicHardBCICBarrierTrainer:
         self.model.eval()
         preds = []
         for i in range(0, len(z_np), batch_size):
-            batch = to_tensor(z_np[i:i+batch_size])
+            batch = to_tensor(z_np[i:i + batch_size])
             pred = self.model(batch).detach().cpu().numpy()
             preds.append(pred)
         return np.vstack(preds)
@@ -433,7 +449,7 @@ class ParabolicHardBCICBarrierTrainer:
         z_np = self.problem.heldout_residual_points(self.config.heldout_residual_n)
         z = to_tensor(z_np, requires_grad=True)
         res = self.residual(z)
-        return float(torch.mean(res**2).detach().cpu().item())
+        return float(torch.mean(res ** 2).detach().cpu().item())
 
     def evaluate_common_metrics(self) -> Tuple[float, Dict[str, float], np.ndarray, np.ndarray, Dict[str, np.ndarray]]:
         z_grid, meta = self.problem.evaluation_grid()
@@ -446,12 +462,18 @@ class ParabolicHardBCICBarrierTrainer:
     def train(self) -> Dict[str, float]:
         cfg = self.config
         t0 = time.time()
-        pbar = trange(1, cfg.epochs + 1, desc="Training parabolic hard-IC/BC + barrier", dynamic_ncols=True)
+        pbar = trange(
+            1,
+            cfg.epochs + 1,
+            desc="Training parabolic hard-IC/BC + hard barrier",
+            dynamic_ncols=True,
+        )
         final_metrics: Dict[str, float] = {}
 
         for epoch in pbar:
             self.model.train()
             self.optimizer.zero_grad(set_to_none=True)
+
             terms = self._loss_terms()
             terms["total_loss"].backward()
             self.optimizer.step()
@@ -463,7 +485,6 @@ class ParabolicHardBCICBarrierTrainer:
                 self.history["epoch"].append(epoch)
                 self.history["total_loss"].append(float(terms["total_loss"].detach().cpu().item()))
                 self.history["loss_res"].append(float(terms["loss_res"].detach().cpu().item()))
-                self.history["loss_qual"].append(float(terms["loss_qual"].detach().cpu().item()))
                 self.history["loss_data"].append(float(terms["loss_data"].detach().cpu().item()))
                 self.history["heldout_residual_mse"].append(heldout_res_mse)
                 self.history["rel_l2_test"].append(rel_l2)
@@ -486,9 +507,9 @@ class ParabolicHardBCICBarrierTrainer:
                 pbar.set_postfix_str(
                     f"loss={self.history['total_loss'][-1]:.3e} | "
                     f"res={self.history['loss_res'][-1]:.3e} | "
-                    f"qual={self.history['loss_qual'][-1]:.3e} | "
                     f"testL2={rel_l2:.3e} | "
-                    f"heldoutRes={heldout_res_mse:.3e}"
+                    f"heldoutRes={heldout_res_mse:.3e} | "
+                    f"barrierViol={extras['mean_barrier_violation']:.3e}"
                 )
 
                 final_metrics = {
@@ -507,16 +528,20 @@ class ParabolicHardBCICBarrierTrainer:
     def _save_outputs(self, final_metrics: Dict[str, float]) -> None:
         with open(os.path.join(self.run_dir, "config.json"), "w", encoding="utf-8") as f:
             json.dump(asdict(self.config), f, indent=2)
+
         with open(os.path.join(self.run_dir, "history.json"), "w", encoding="utf-8") as f:
             json.dump(self.history, f, indent=2)
+
         with open(os.path.join(self.run_dir, "final_metrics.json"), "w", encoding="utf-8") as f:
             json.dump(final_metrics, f, indent=2)
 
         z_grid, meta = self.problem.evaluation_grid()
         pred = self.predict(z_grid)
         truth = self.problem.exact_solution(z_grid)
+
         self.problem.plot_prediction(pred, truth, meta, self.run_dir, tag=self.problem.name)
         self._plot_history()
+
         torch.save(self.model.state_dict(), os.path.join(self.run_dir, "model_state_dict.pt"))
 
     def _plot_history(self) -> None:
@@ -525,27 +550,27 @@ class ParabolicHardBCICBarrierTrainer:
             return
 
         fig, ax = plt.subplots(figsize=(8, 5))
-        for key in ["total_loss", "loss_res", "loss_qual", "loss_data"]:
+        for key in ["total_loss", "loss_res", "loss_data"]:
             vals = np.array(self.history[key])
             if np.any(vals != 0):
                 ax.plot(epochs, vals, label=key)
         ax.set_yscale("log")
         ax.set_xlabel("Epoch")
         ax.set_ylabel("Loss")
-        ax.set_title("Training losses: parabolic hard-IC/BC + barrier")
+        ax.set_title("Training losses: parabolic hard-IC/BC + hard barrier")
         ax.legend()
         fig.tight_layout()
         fig.savefig(os.path.join(self.run_dir, "loss_history.png"), dpi=160)
         plt.close(fig)
 
         fig, ax = plt.subplots(figsize=(8, 5))
-        for key in ["heldout_residual_mse", "rel_l2_test", "final_time_rel_l2", "mean_barrier_violation"]:
-            vals = np.array(self.history[key])
-            ax.plot(epochs, vals, label=key)
+        ax.plot(epochs, self.history["heldout_residual_mse"], label="Validation Residual MSE")
+        ax.plot(epochs, self.history["rel_l2_test"], label="Relative L2 Error")
+        ax.plot(epochs, self.history["total_loss"], label="Total Loss")
         ax.set_yscale("log")
         ax.set_xlabel("Epoch")
         ax.set_ylabel("Metric")
-        ax.set_title("Convergence metrics")
+        ax.set_title(f"Convergence metrics: informed {self.problem.name}")
         ax.legend()
         fig.tight_layout()
         fig.savefig(os.path.join(self.run_dir, "convergence_metrics.png"), dpi=160)
@@ -571,7 +596,11 @@ class ParabolicHardBCICBarrierTrainer:
 # Convenience runner
 # ============================================================
 
-def default_config(seed: int = 0, n_data: int = 0, outdir: str = "parabolic_hardbcic_barrier_runs") -> TrainConfig:
+def default_config(
+    seed: int = 0,
+    n_data: int = 0,
+    outdir: str = "parabolic_runs",
+) -> TrainConfig:
     return TrainConfig(
         seed=seed,
         width=64,
@@ -580,10 +609,8 @@ def default_config(seed: int = 0, n_data: int = 0, outdir: str = "parabolic_hard
         epochs=5000,
         lr=1e-3,
         n_res=4096,
-        n_qual=4096,
         n_data=n_data,
         lambda_res=1.0,
-        lambda_qual=0.1,
         lambda_data=1.0,
         eval_every=100,
         heldout_residual_n=4096,
@@ -591,10 +618,14 @@ def default_config(seed: int = 0, n_data: int = 0, outdir: str = "parabolic_hard
     )
 
 
-def run_single(seed: int = 0, n_data: int = 0, outdir: str = "parabolic_hardbcic_barrier_runs") -> Dict[str, float]:
+def run_single(
+    seed: int = 0,
+    n_data: int = 0,
+    outdir: str = "parabolic_runs",
+) -> Dict[str, float]:
     problem = ParabolicProblem()
     cfg = default_config(seed=seed, n_data=n_data, outdir=outdir)
-    trainer = ParabolicHardBCICBarrierTrainer(problem, cfg)
+    trainer = ParabolicTrainer(problem, cfg)
     final_metrics = trainer.train()
 
     print("\nFinal metrics:")
@@ -603,12 +634,13 @@ def run_single(seed: int = 0, n_data: int = 0, outdir: str = "parabolic_hardbcic
             print(f"  {k}: {v:.6e}")
         else:
             print(f"  {k}: {v}")
+
     print(f"Saved outputs to: {trainer.run_dir}")
     return final_metrics
 
 
 if __name__ == "__main__":
     SEED = 0
-    N_DATA = 100   # set to 0 for pure physics-informed; try 50 or 100 for sparse hybrid runs
-    OUTDIR = "parabolic_hardbcic_barrier_runs"
+    N_DATA = 0   # set to 0 for pure physics-informed; try 50 or 100 for sparse hybrid runs
+    OUTDIR = "parabolic_runs"
     run_single(seed=SEED, n_data=N_DATA, outdir=OUTDIR)

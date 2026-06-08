@@ -1,0 +1,42 @@
+{
+  "elliptic": {
+    "rel_l2_test": 5.4363480207344986e-05,
+    "heldout_residual_mse": 3.701183282370382e-23,
+    "boundary_l2_abs": 0.0,
+    "boundary_max_abs": 0.0,
+    "h1_semi_rel": 5.43634802077533e-05,
+    "min_pred": 0.0,
+    "max_pred": 1.0000543634802088,
+    "frac_negative": 0.0,
+    "neg_part_l2": 0.0,
+    "max_negativity_violation": 0.0,
+    "solve_seconds": 29.8569438457489
+  },
+  "parabolic": {
+    "rel_l2_test": 0.005046074747423328,
+    "heldout_residual_mse": 0.0009910061356303026,
+    "ic_max_abs": 0.0,
+    "bc_max_abs": 1.2144838137404922e-16,
+    "initial_rel_l2": 0.0,
+    "final_time_rel_l2": 0.005690263725175161,
+    "max_time_slice_rel_l2": 0.005719400475988217,
+    "min_pred": 0.0,
+    "max_pred": 1.0,
+    "solve_seconds": 0.36150407791137695
+  },
+  "hyperbolic": {
+    "rel_l2_test": 0.03240570851894699,
+    "rel_l1_test": 0.002986557410951735,
+    "final_time_rel_l1": 0.002379520727703664,
+    "final_time_rel_l2": 0.029069469726241876,
+    "shock_location_error_final": 0.0018703241895261513,
+    "shock_width_final": 0.009975062344139696,
+    "overshoot": 0.0,
+    "undershoot": 0.0,
+    "mean_entropy_violation_eval": 0.06858847773149439,
+    "max_entropy_violation_eval": 57.20250108540515,
+    "min_pred": 0.0,
+    "max_pred": 2.0,
+    "solve_seconds": 0.09005427360534668
+  }
+}
